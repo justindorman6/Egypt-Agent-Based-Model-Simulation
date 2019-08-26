@@ -1,5 +1,5 @@
-class Patch(object):
-
+import math
+class Patch:
 
 	#Attributes
 	__patch_id = 0
@@ -14,6 +14,14 @@ class Patch(object):
 		self.__isField = isField
 		if self.__isField == True:
 			self.inner = self.Field(patch_id, 0.8, 0)
+
+	def getID(self):
+		self.__patch_id
+
+	def findCoordinates(self):
+		r = math.floor(self.__patch_id/41)
+		c = self.__patch_id % 41
+		return [r,c]
 
 	def toggleSettlement(self):
 		self.__isSettlement =  not self.__isSettlement
@@ -30,24 +38,41 @@ class Patch(object):
 	def changeColour(self, colour):
 		self.__colour = colour
 
+	def isRiver(self):
+		return self.__isRiver
+
+	def isSettlement(self):
+		return self.__isSettlement
+
+	def isField(self):
+		return self.__isField
+
+	def isOwned(self):
+		return self.__isOwned
+
+	def getFieldFertility(self):
+		pass
 
 
-	class Field:
+	class Field():
 
 		#Attributes
 		__field_id = 0
-		__fetility = 0
+		__fertility = 0
 		__avg_fertility = 0
 		__harvested = False
 		__years_fallow = 0
 
 		def __init__(self, field_id, fertility, years_fallow):
 			self.__field_id = field_id
-			self.__fetility = fertility
+			self.__fetility = 5
 			self.__years_fallow = years_fallow
 
+		def getFertility(self):
+			return self.__fertility
+
 		def toggleHarvested(self):
-			self.__harvested = not self.__harvested;
+			self.__harvested = not self.__harvested
 
 		def fieldChangeover():
 			return 0
