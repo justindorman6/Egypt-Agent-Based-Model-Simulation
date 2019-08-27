@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from matplotlib import colors
 from PyQt5.QtGui import QPixmap, QPainter
 import matplotlib.patches as ptc
@@ -38,6 +39,8 @@ class PicButton(QAbstractButton):
 
 class Simulate(QtWidgets.QMainWindow):
 	#Attributes
+	xList = []
+	yList = []
 	global c_id
 	fig, ax = plt.subplots(figsize=(15,8.2))
 	__model_time_span = 0
@@ -184,123 +187,72 @@ class Simulate(QtWidgets.QMainWindow):
 		self.createRiver()
 		self.establishPopulation()
 
-		for i in self.coordinates:
-			self.ax.plot(i[0], i[1], marker="p") 
-
 		self.runSimulation()
 
+	def getData(self):
+		self.xList =[]
+		self.yList = []
+		print("IN GET CO")
+		import threading
+		import time
+
+		lock = threading.Lock()
+		farmCoordinates = []
+		def a():
+			count =0
+			while(count<self.__model_time_span):
+				lock.acquire()
+				try:
+					count += 1
+					#print(count)
+					for i in range(len(self.__settlement_List)):
+						for j in range(len(self.__settlement_List[i].getHouseholdList())):
+							#print(self.__settlement_List[i].getHouseholdList()[j])
+							#farmCoordinates.append(self.__settlement_List[i].getHouseholdList()[j].claimFields(self.__settlement_List[i].getCoordinates()[0],self.__settlement_List[i].getCoordinates()[1]))
+							#self.ax.plot(farmCoordinates[][0], farmCoordinates[k][1], '-ro')
+							x = self.__settlement_List[i].getHouseholdList()[j].claimFields(self.__settlement_List[i].getCoordinates()[0],self.__settlement_List[i].getCoordinates()[1])
+							print(x[0],x[1])
+							self.xList.append(x[0])
+							self.yList.append(x[1])
+							#self.ax.plot(x[0], x[1], '-rs')
+
+				finally:
+					time.sleep(0.1)
+					lock.release()
+
+		t = threading.Thread(name='a', target=a)
+		t.start()
+
+	def animate(self, i):
+		self.getData()
+		print("when do you get HERE")
+		self.ax.clear()
+		self.ax.plot(self.xList, self.yList, "ro-")
 
 	def runSimulation(self):
 		#arr = np.random.randint(1, size= (41,41)) #making it all yellow from the beginning
-
+		
 		cmap = mpl.colors.ListedColormap(['blue', 'lightgreen'])
 		#bounds = [1,2]
 		#norm = colors.BoundaryNorm(bounds,cmap.N)
 		plt.rcParams['toolbar'] = 'None' #removes the toolbar
-
+		
 
 		if 1:
 			#fig, ax = plt.subplots(figsize=(15,8.2))
-			self.ax.imshow(self.map.getGrid(),vmin=0, vmax=len(cmap.colors), cmap=cmap, interpolation= "None")
 			#np.set_printoptions(threshold=sys.maxsize)
 			#print(self.map.getGrid())
 
 			#plt.subplots_adjust(left = 0.4)#adds space to the right of the plot
 
 			# Define a 1st position to annotate (display it with a marker)
-			xy = (23, 40)
+			#xy = (23, 40)
 			#ax.plot(xy[0], xy[1], "ro-")
-			import threading
-			import time
+			ani = animation.FuncAnimation(self.fig, self.animate(1000), interval=1000)
 
-			lock = threading.Lock()
-			farmCoordinates = []
-			def a():
-				count =0
-				while(count<self.__model_time_span):
-					lock.acquire()
-					try:
-						count += 1
-						#print(count)
-						for i in range(len(self.__settlement_List)):
-							for j in range(len(self.__settlement_List[i].getHouseholdList())):
-								#print(self.__settlement_List[i].getHouseholdList()[j])
-								#farmCoordinates.append(self.__settlement_List[i].getHouseholdList()[j].claimFields(self.__settlement_List[i].getCoordinates()[0],self.__settlement_List[i].getCoordinates()[1]))
-								#self.ax.plot(farmCoordinates[][0], farmCoordinates[k][1], '-ro')
-								x = self.__settlement_List[i].getHouseholdList()[j].claimFields(self.__settlement_List[i].getCoordinates()[0],self.__settlement_List[i].getCoordinates()[1])
-								print(x[0],x[1])
-								self.ax.plot(x[0], x[1], '-rs')
-
-					finally:
-						time.sleep(0.1)
-						lock.release()
-
-			t = threading.Thread(name='a', target=a)
-
-			t.start()
-			
-			# Annotate the 1st position with a text box ('Test 1')
-			'''
-			offsetbox = TextArea("Test 1", minimumdescent=False)
-			ab = AnnotationBbox(offsetbox, xy,
-								xybox=(-60, 40),
-								xycoords='data',
-								boxcoords="offset points",
-								arrowprops=dict(arrowstyle="->"))
-			ax.add_artist(ab)wai
-			'''
-			# Annotate the 1st position with another text box ('Test')
-			'''
-			offsetbox = TextArea("Test", minimumdescent=False)
-			ab = AnnotationBbox(offsetbox, xy,
-								xybox=(1.02, xy[1]),
-								xycoords='data',
-								boxcoords=("axes fraction", "data"),
-								box_alignment=(0., 0.5),
-								arrowprops=dict(arrowstyle="->"))
-			ax.add_artist(ab)
-			
-			# Define a 2nd position to annotate (don't display with a marker this time)
-			xy = [10, 4]
-			# Annotate the 2nd position with a circle patch
-			da = DrawingArea(20, 20, 0, 0)
-			p = Circle((10, 10), 10)
-			da.add_artist(p)
-			ab = AnnotationBbox(da, xy,
-								xybox=(1.02, xy[1]),
-								xycoords='data',
-								boxcoords=("axes fraction", "data"),
-								box_alignment=(0., 0.5),
-								arrowprops=dict(arrowstyle="->"))
-			self.ax.add_artist(ab)
-			# Annotate the 2nd position with an image (a generated array of pixels)
-			arr = np.arange(1600).reshape((40, 40))
-			im = OffsetImage(arr, zoom=1)
-			im.image.axes = self.ax
-			ab = AnnotationBbox(im, xy,
-								xybox=(-40., 50.),
-								xycoords='data',
-								boxcoords="offset points",
-								pad=0.3,
-								arrowprops=dict(arrowstyle="->"))
-			self.ax.add_artist(ab)
-			# Annotate the 2nd position with another image
-			fn = get_sample_data('/Users/user/Desktop/CSC3003S/EGYPT/Egypt_Simulation/settlement_yellow.png', asfileobj=False)
-			arr_img = plt.imread(fn, format='png')
-			imagebox = OffsetImage(arr_img, zoom=0.6)
-			imagebox.image.axes = self.ax
-			ab = AnnotationBbox(imagebox, xy,
-								xybox=(120., -80.),
-								xycoords='data',
-								boxcoords="offset points",
-								pad=0.5,
-								arrowprops=dict(
-									arrowstyle="->",
-									connectionstyle="angle,angleA=0,angleB=90,rad=3")
-								)
-			self.ax.add_artist(ab)
-			self.ax.grid(which='major', axis='both', linestyle='-', color='0', linewidth=0)
-			'''
+			self.ax.imshow(self.map.getGrid(),vmin=0, vmax=len(cmap.colors), cmap=cmap, interpolation= "None")
+			for i in self.coordinates:
+				self.ax.plot(i[0], i[1], marker="p") 
 
 			#UNCOMMENT BELOW IF YOU WANT TO INVERT THE DIMENSIONS (EITHER 0 TO 40 OR 40 TO 0)
 			#ax.set_xlim(0, 42)
@@ -382,7 +334,7 @@ class Simulate(QtWidgets.QMainWindow):
 		#THE MAIN WINDOW
 		self.setGeometry(100,100,700,1200)
 		self.setWindowTitle("Egypt Simulation")
-
+		
 		self.show()
 		#exit(self.qapp.exec_())
 
@@ -667,7 +619,7 @@ class Simulate(QtWidgets.QMainWindow):
 			Simulate().saveUserInput(self.sliderTS.value(), self.sliderSett.value(), self.sliderHouse.value(), self.sliderHSize.value(), self.sliderGrain.value(), self.sliderComp.value()/10, \
 				self.sliderAmbit.value()/10, self.sliderGen.value()/10, self.sliderKnow.value(), self.sliderDist.value(), self.sliderFLimit.value(), self.sliderPop.value()/10, self.rbtnFission.isChecked(), \
 				self.sliderMinF.value()/10, self.rbtnRental.isChecked(), self.sliderRentalR.value())
-
+			self.close()
 
 		def changeValueTS(self):
 			value = str(self.sliderTS.value())
@@ -729,7 +681,6 @@ if __name__ == "__main__":
 	app = QApplication(sys.argv)
 	w = Simulate().SetUpWindow()
 	w.show()
-
 	#qapp = QtWidgets.QApplication([])
 	#s = Simulate()
 	#s.main()
